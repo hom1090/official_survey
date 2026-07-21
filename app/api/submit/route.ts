@@ -1,0 +1,73 @@
+import { NextResponse } from "next/server";
+
+type SurveyPayload = {
+  name?: string;
+  company?: string;
+  title?: string;
+  email?: string;
+  aiExperience?: string;
+  agentPreference?: string;
+  businessAreas?: string[];
+  primaryOutcome?: string;
+  usecaseTitle?: string;
+  usecaseDescription?: string;
+  currentPain?: string;
+  desiredOutput?: string;
+  availableDataTools?: string;
+  dataSensitivity?: string;
+  successCriteria?: string;
+  instructorNote?: string;
+  website?: string;
+};
+
+const clean = (value: unknown, max = 2000) =>
+  typeof value === "string" ? value.trim().slice(0, max) : "";
+
+export async function POST(request: Request) {
+  try {
+    const payload = (await request.json()) as SurveyPayload;
+    if (payload.website) return NextResponse.json({ ok: true });
+
+    const required = [payload.name, payload.company, payload.title, payload.aiExperience, payload.agentPreference, payload.primaryOutcome, payload.usecaseTitle, payload.usecaseDescription, payload.desiredOutput, payload.dataSensitivity, payload.successCriteria];
+    if (required.some((value) => !clean(value)) || !payload.businessAreas?.length || clean(payload.usecaseDescription).length < 20) {
+      return NextResponse.json({ ok: false, message: "필수 항목을 확인해 주세요." }, { status: 400 });
+    }
+
+    const endpoint = process.env.APPS_SCRIPT_URL;
+    if (!endpoint) {
+      return NextResponse.json({ ok: false, message: "응답 저장 연결을 준비 중입니다. 잠시 후 다시 시도해 주세요." }, { status: 503 });
+    }
+
+    const submissionId = crypto.randomUUID();
+    const body = new URLSearchParams({
+      submissionId,
+      name: clean(payload.name, 100),
+      company: clean(payload.company, 150),
+      title: clean(payload.title, 100),
+      email: clean(payload.email, 200),
+      aiExperience: clean(payload.aiExperience, 100),
+      agentPreference: clean(payload.agentPreference, 100),
+      businessAreas: (payload.businessAreas || []).slice(0, 3).map((v) => clean(v, 60)).join(", "),
+      primaryOutcome: clean(payload.primaryOutcome, 100),
+      usecaseTitle: clean(payload.usecaseTitle, 250),
+      usecaseDescription: clean(payload.usecaseDescription, 3000),
+      currentPain: clean(payload.currentPain, 2000),
+      desiredOutput: clean(payload.desiredOutput, 150),
+      availableDataTools: clean(payload.availableDataTools, 1500),
+      dataSensitivity: clean(payload.dataSensitivity, 100),
+      successCriteria: clean(payload.successCriteria, 1000),
+      instructorNote: clean(payload.instructorNote, 1500),
+    });
+
+    const response = await fetch(endpoint, { method: "POST", body, redirect: "follow" });
+    const result = (await response.json()) as { ok?: boolean; message?: string; submissionId?: string };
+    if (!response.ok || !result.ok || result.submissionId !== submissionId) {
+      throw new Error(result.message || "스프레드시트 저장 확인에 실패했습니다.");
+    }
+
+    return NextResponse.json({ ok: true, submissionId });
+  } catch (error) {
+    console.error("Survey submission failed", error);
+    return NextResponse.json({ ok: false, message: "응답을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요." }, { status: 500 });
+  }
+}

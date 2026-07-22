@@ -10,7 +10,7 @@ const businessAreas = [
   "재무·리스크",
   "HR·조직",
   "R&D·데이터",
-  "기타",
+  "직접입력",
 ];
 
 const examples = [
@@ -64,14 +64,15 @@ type FormState = {
   title: string;
   email: string;
   aiExperience: string;
-  agentPreference: string;
   businessAreas: string[];
+  businessAreaOther: string;
   primaryOutcome: string;
+  primaryOutcomeOther: string;
   usecaseTitle: string;
   usecaseDescription: string;
   currentPain: string;
   desiredOutput: string;
-  availableDataTools: string;
+  desiredOutputOther: string;
   dataSensitivity: string;
   successCriteria: string;
   instructorNote: string;
@@ -84,14 +85,15 @@ const initialForm: FormState = {
   title: "",
   email: "",
   aiExperience: "",
-  agentPreference: "",
   businessAreas: [],
+  businessAreaOther: "",
   primaryOutcome: "",
+  primaryOutcomeOther: "",
   usecaseTitle: "",
   usecaseDescription: "",
   currentPain: "",
   desiredOutput: "",
-  availableDataTools: "",
+  desiredOutputOther: "",
   dataSensitivity: "",
   successCriteria: "",
   instructorNote: "",
@@ -137,14 +139,17 @@ export default function Home() {
     if (step === 2)
       return Boolean(
         form.aiExperience &&
-          form.agentPreference &&
           form.businessAreas.length &&
-          form.primaryOutcome,
+          (!form.businessAreas.includes("직접입력") || form.businessAreaOther.trim()) &&
+          form.primaryOutcome &&
+          (form.primaryOutcome !== "직접입력" || form.primaryOutcomeOther.trim()),
       );
     return Boolean(
       form.usecaseTitle &&
+        form.currentPain.trim() &&
         form.usecaseDescription.length >= 20 &&
         form.desiredOutput &&
+        (form.desiredOutput !== "직접입력" || form.desiredOutputOther.trim()) &&
         form.dataSensitivity &&
         form.successCriteria,
     );
@@ -180,7 +185,12 @@ export default function Home() {
       const response = await fetch("/api/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          businessAreas: form.businessAreas.map((area) => area === "직접입력" ? form.businessAreaOther.trim() : area),
+          primaryOutcome: form.primaryOutcome === "직접입력" ? form.primaryOutcomeOther.trim() : form.primaryOutcome,
+          desiredOutput: form.desiredOutput === "직접입력" ? form.desiredOutputOther.trim() : form.desiredOutput,
+        }),
       });
       const result = (await response.json()) as { ok?: boolean; message?: string };
       if (!response.ok || !result.ok) throw new Error(result.message || "응답 저장에 실패했습니다.");
@@ -229,15 +239,11 @@ export default function Home() {
       <div className="page-shell">
         <section className="intro-panel">
           <p className="eyebrow">MAKE YOUR OWN AI AGENT</p>
-          <h1>이번 세션에서 직접 만들고 싶은<br /><em>AI Use Case</em>를 알려주세요.</h1>
+          <h1>직접 만들고 싶은 <em>AI Use Case</em>를 알려주세요.</h1>
           <p className="intro-copy">
             정답을 찾는 설문이 아닙니다. 지금 떠오르는 업무 장면을 알려주시면,
-            Claude Code와 Codex로 직접 구현해 볼 수 있도록 강사가 미리 준비하겠습니다.
+            구현해 볼 수 있도록 강사가 미리 준비하겠습니다.
           </p>
-          <div className="guide-card">
-            <div className="guide-icon">✦</div>
-            <div><strong>좋은 주제의 기준</strong><p>반복적이거나, 자료가 흩어져 있거나, 판단 전에 정리가 필요한 업무</p></div>
-          </div>
           <div className="privacy-note"><span>🔒</span><p>작성 내용은 핸즈온 준비 목적으로만 활용됩니다. 실제 기밀 정보 대신 자료의 종류만 적어주세요.</p></div>
         </section>
 
@@ -257,7 +263,7 @@ export default function Home() {
                   <label><FieldLabel>소속 / 회사</FieldLabel><input value={form.company} onChange={(e) => update("company", e.target.value)} placeholder="예: ABC 그룹" autoComplete="organization" /></label>
                 </div>
                 <div className="two-col">
-                  <label><FieldLabel>직책</FieldLabel><input value={form.title} onChange={(e) => update("title", e.target.value)} placeholder="예: 대표이사, 본부장" autoComplete="organization-title" /></label>
+                  <label><FieldLabel>직무</FieldLabel><input value={form.title} onChange={(e) => update("title", e.target.value)} placeholder="예: 인사, 마케팅, 전략기획" autoComplete="organization-title" /></label>
                   <label><FieldLabel optional>이메일</FieldLabel><input type="email" value={form.email} onChange={(e) => update("email", e.target.value)} placeholder="name@company.com" autoComplete="email" /></label>
                 </div>
                 <div className="mini-tip"><b>TIP</b><p>코딩 경험은 필요하지 않습니다. 평소 해결하고 싶었던 업무 한 가지면 충분합니다.</p></div>
@@ -268,15 +274,12 @@ export default function Home() {
               <div className="step-content">
                 <div className="section-heading"><h2>어떤 업무에 AI를 적용하고 싶으신가요?</h2><p>가장 가까운 항목을 편하게 선택해 주세요.</p></div>
                 <fieldset><FieldLabel>생성형 AI 활용 경험</FieldLabel><div className="choice-list">
-                  {["거의 사용해 본 적 없음", "요약·검색 등에 가끔 사용", "업무용 프롬프트를 직접 실험", "정기적으로 업무에 활용"].map((item) => <label className={`radio-card ${form.aiExperience === item ? "selected" : ""}`} key={item}><input type="radio" name="experience" value={item} checked={form.aiExperience === item} onChange={() => update("aiExperience", item)} /><span>{item}</span></label>)}
-                </div></fieldset>
-                <fieldset><FieldLabel>이번에 사용해 보고 싶은 에이전트</FieldLabel><div className="choice-grid">
-                  {["Claude Code", "Codex", "둘 다 비교해 보고 싶음", "강사 추천에 따름"].map((item) => <label className={`radio-card ${form.agentPreference === item ? "selected" : ""}`} key={item}><input type="radio" name="agent" checked={form.agentPreference === item} onChange={() => update("agentPreference", item)} /><span>{item}</span></label>)}
+                  {["거의 사용해 본 적 없음", "요약·검색 등에 가끔 사용", "정기적으로 업무에 활용", "AI Agent 활용 경험 있음(Claude Code, Codex)"].map((item) => <label className={`radio-card ${form.aiExperience === item ? "selected" : ""}`} key={item}><input type="radio" name="experience" value={item} checked={form.aiExperience === item} onChange={() => update("aiExperience", item)} /><span>{item}</span></label>)}
                 </div></fieldset>
                 <fieldset><FieldLabel>관심 업무 영역 <small>최대 3개</small></FieldLabel><div className="chip-grid">
                   {businessAreas.map((area) => <label className={`check-chip ${form.businessAreas.includes(area) ? "selected" : ""}`} key={area}><input type="checkbox" checked={form.businessAreas.includes(area)} onChange={() => toggleArea(area)} disabled={!form.businessAreas.includes(area) && form.businessAreas.length >= 3} /><span>{area}</span></label>)}
-                </div></fieldset>
-                <label><FieldLabel>AI를 통해 가장 얻고 싶은 결과</FieldLabel><select value={form.primaryOutcome} onChange={(e) => update("primaryOutcome", e.target.value)}><option value="">선택해 주세요</option><option>의사결정 속도 향상</option><option>반복 업무 시간 절감</option><option>보고서·콘텐츠 품질 향상</option><option>리스크·누락 사전 발견</option><option>새로운 고객·사업 기회 발굴</option></select></label>
+                </div>{form.businessAreas.includes("직접입력") && <input className="conditional-input" value={form.businessAreaOther} onChange={(e) => update("businessAreaOther", e.target.value)} placeholder="관심 업무 영역을 직접 입력해 주세요" autoFocus />}</fieldset>
+                <label><FieldLabel>AI를 통해 가장 얻고 싶은 결과</FieldLabel><select value={form.primaryOutcome} onChange={(e) => update("primaryOutcome", e.target.value)}><option value="">선택해 주세요</option><option>의사결정 속도 향상</option><option>반복 업무 시간 절감</option><option>보고서·콘텐츠 품질 향상</option><option>리스크·누락 사전 발견</option><option>새로운 고객·사업 기회 발굴</option><option>직접입력</option></select>{form.primaryOutcome === "직접입력" && <input className="conditional-input" value={form.primaryOutcomeOther} onChange={(e) => update("primaryOutcomeOther", e.target.value)} placeholder="원하는 결과를 직접 입력해 주세요" autoFocus />}</label>
               </div>
             )}
 
@@ -284,13 +287,12 @@ export default function Home() {
               <div className="step-content">
                 <div className="section-heading usecase-heading"><div><h2>만들고 싶은 Use Case를 구체화해 주세요.</h2><p>완벽하게 쓰지 않아도 괜찮습니다. 예시를 골라 수정해도 됩니다.</p></div><button type="button" className="example-button" onClick={() => setShowExamples(true)}>✦ 작성 예시 보기</button></div>
                 <label><FieldLabel>Use Case 제목</FieldLabel><input value={form.usecaseTitle} onChange={(e) => update("usecaseTitle", e.target.value)} placeholder="예: 주간 경영회의 의사결정 브리프 자동 작성" /></label>
+                <label><FieldLabel>현재 업무 방식에서 가장 불편한 점</FieldLabel><textarea value={form.currentPain} onChange={(e) => update("currentPain", e.target.value)} placeholder="예: 자료가 여러 파일에 흩어져 있고, 매주 취합과 요약에 3시간 이상 걸립니다." /></label>
                 <label><FieldLabel>어떤 업무를 어떻게 바꾸고 싶으신가요?</FieldLabel><textarea className="large-textarea" value={form.usecaseDescription} onChange={(e) => update("usecaseDescription", e.target.value)} placeholder="현재 어떤 자료를 보고, 누구와 어떤 판단을 하며, AI가 어느 부분을 도와주면 좋을지 적어주세요." /><span className="char-count">{form.usecaseDescription.length}자 · 최소 20자</span></label>
-                <label><FieldLabel optional>현재 업무 방식에서 가장 불편한 점</FieldLabel><textarea value={form.currentPain} onChange={(e) => update("currentPain", e.target.value)} placeholder="예: 자료가 여러 파일에 흩어져 있고, 매주 취합과 요약에 3시간 이상 걸립니다." /></label>
                 <div className="two-col">
-                  <label><FieldLabel>원하는 산출물</FieldLabel><select value={form.desiredOutput} onChange={(e) => update("desiredOutput", e.target.value)}><option value="">선택해 주세요</option><option>경영진 보고서·브리프</option><option>분석 리포트·대시보드</option><option>이메일·제안서·콘텐츠</option><option>점검표·액션 리스트</option><option>검색·질의응답 도구</option><option>반복 업무 자동화</option><option>기타</option></select></label>
+                  <label><FieldLabel>원하는 산출물</FieldLabel><select value={form.desiredOutput} onChange={(e) => update("desiredOutput", e.target.value)}><option value="">선택해 주세요</option><option>경영진 보고서·브리프</option><option>분석 리포트·대시보드</option><option>이메일·제안서·콘텐츠</option><option>점검표·액션 리스트</option><option>검색·질의응답 도구</option><option>반복 업무 자동화</option><option>직접입력</option></select>{form.desiredOutput === "직접입력" && <input className="conditional-input" value={form.desiredOutputOther} onChange={(e) => update("desiredOutputOther", e.target.value)} placeholder="원하는 산출물을 직접 입력해 주세요" autoFocus />}</label>
                   <label><FieldLabel>다룰 정보의 민감도</FieldLabel><select value={form.dataSensitivity} onChange={(e) => update("dataSensitivity", e.target.value)}><option value="">선택해 주세요</option><option>공개 가능한 정보</option><option>사내 일반 정보</option><option>민감 정보 포함 가능</option><option>잘 모르겠음</option></select></label>
                 </div>
-                <label><FieldLabel optional>활용 가능한 데이터·도구</FieldLabel><input value={form.availableDataTools} onChange={(e) => update("availableDataTools", e.target.value)} placeholder="예: Excel 실적표, 회의록, CRM, 사내 규정 PDF (자료명만 작성)" /></label>
                 <label><FieldLabel>성공했다고 판단할 기준</FieldLabel><input value={form.successCriteria} onChange={(e) => update("successCriteria", e.target.value)} placeholder="예: 주 3시간 절감, 핵심 리스크 누락 감소, 초안 품질 향상" /></label>
                 <label><FieldLabel optional>강사에게 미리 전하고 싶은 내용</FieldLabel><textarea value={form.instructorNote} onChange={(e) => update("instructorNote", e.target.value)} placeholder="실습 시 고려할 제약, 궁금한 점 등을 자유롭게 적어주세요." /></label>
                 <label className="honeypot" aria-hidden="true">웹사이트<input tabIndex={-1} autoComplete="off" value={form.website} onChange={(e) => update("website", e.target.value)} /></label>

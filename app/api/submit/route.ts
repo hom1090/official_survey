@@ -6,14 +6,12 @@ type SurveyPayload = {
   title?: string;
   email?: string;
   aiExperience?: string;
-  agentPreference?: string;
   businessAreas?: string[];
   primaryOutcome?: string;
   usecaseTitle?: string;
   usecaseDescription?: string;
   currentPain?: string;
   desiredOutput?: string;
-  availableDataTools?: string;
   dataSensitivity?: string;
   successCriteria?: string;
   instructorNote?: string;
@@ -28,7 +26,7 @@ export async function POST(request: Request) {
     const payload = (await request.json()) as SurveyPayload;
     if (payload.website) return NextResponse.json({ ok: true });
 
-    const required = [payload.name, payload.company, payload.title, payload.aiExperience, payload.agentPreference, payload.primaryOutcome, payload.usecaseTitle, payload.usecaseDescription, payload.desiredOutput, payload.dataSensitivity, payload.successCriteria];
+    const required = [payload.name, payload.company, payload.title, payload.aiExperience, payload.primaryOutcome, payload.usecaseTitle, payload.currentPain, payload.usecaseDescription, payload.desiredOutput, payload.dataSensitivity, payload.successCriteria];
     if (required.some((value) => !clean(value)) || !payload.businessAreas?.length || clean(payload.usecaseDescription).length < 20) {
       return NextResponse.json({ ok: false, message: "필수 항목을 확인해 주세요." }, { status: 400 });
     }
@@ -46,14 +44,14 @@ export async function POST(request: Request) {
       title: clean(payload.title, 100),
       email: clean(payload.email, 200),
       aiExperience: clean(payload.aiExperience, 100),
-      agentPreference: clean(payload.agentPreference, 100),
+      agentPreference: "",
       businessAreas: (payload.businessAreas || []).slice(0, 3).map((v) => clean(v, 60)).join(", "),
       primaryOutcome: clean(payload.primaryOutcome, 100),
       usecaseTitle: clean(payload.usecaseTitle, 250),
       usecaseDescription: clean(payload.usecaseDescription, 3000),
       currentPain: clean(payload.currentPain, 2000),
       desiredOutput: clean(payload.desiredOutput, 150),
-      availableDataTools: clean(payload.availableDataTools, 1500),
+      availableDataTools: "",
       dataSensitivity: clean(payload.dataSensitivity, 100),
       successCriteria: clean(payload.successCriteria, 1000),
       instructorNote: clean(payload.instructorNote, 1500),

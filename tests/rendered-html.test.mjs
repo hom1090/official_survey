@@ -20,7 +20,9 @@ test("renders the executive AI hands-on survey", async () => {
 
   const html = await response.text();
   assert.match(html, /Executive AI Hands-on \| 사전 준비 설문/i);
-  assert.match(html, /이번 세션에서 직접 만들고 싶은/);
+  assert.match(html, /직접 만들고 싶은/);
+  assert.doesNotMatch(html, /이번 세션에서 직접 만들고 싶은/);
+  assert.doesNotMatch(html, /좋은 주제의 기준/);
   assert.match(html, /STEP/);
   assert.match(html, /OF 3/);
   assert.match(html, /기본 정보/);

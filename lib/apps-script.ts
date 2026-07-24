@@ -23,13 +23,34 @@ export function getAppsScriptEndpoint() {
 }
 
 export async function postToAppsScript(body: URLSearchParams) {
-  const response = await fetch(getAppsScriptEndpoint(), {
+  let response = await fetch(getAppsScriptEndpoint(), {
     method: "POST",
     body,
-    redirect: "follow",
+    redirect: "manual",
     cache: "no-store",
     signal: AbortSignal.timeout(25_000),
   });
+
+  if ([301, 302, 303, 307, 308].includes(response.status)) {
+    const location = response.headers.get("location");
+    if (!location) throw new Error("Google Apps Script 리디렉션 주소가 없습니다.");
+
+    const redirectUrl = new URL(location);
+    if (
+      redirectUrl.protocol !== "https:" ||
+      redirectUrl.hostname !== "script.googleusercontent.com"
+    ) {
+      throw new Error("Google Apps Script 리디렉션 주소가 올바르지 않습니다.");
+    }
+
+    response = await fetch(redirectUrl, {
+      method: "GET",
+      redirect: "follow",
+      cache: "no-store",
+      signal: AbortSignal.timeout(25_000),
+    });
+  }
+
   const responseText = await response.text();
 
   let result: AppsScriptResult;

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { postToAppsScript } from "@/lib/apps-script";
+import { AppsScriptResponseError, postToAppsScript } from "@/lib/apps-script";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,6 +25,9 @@ export async function GET() {
         endpointConfigured: Boolean(process.env.APPS_SCRIPT_URL),
         endpointReachable: false,
         message: error instanceof Error ? error.message : "연결 상태를 확인하지 못했습니다.",
+        ...(error instanceof AppsScriptResponseError
+          ? { diagnostics: error.diagnostics }
+          : {}),
       },
       { status: 503 },
     );

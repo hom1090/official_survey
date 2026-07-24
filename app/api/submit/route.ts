@@ -9,7 +9,8 @@ type SurveyPayload = {
   businessAreas?: string[];
   primaryOutcome?: string;
   usecaseTitle?: string;
-  usecaseDescription?: string;
+  asIs?: string;
+  toBe?: string;
   currentPain?: string;
   desiredOutput?: string;
   dataSensitivity?: string;
@@ -26,8 +27,8 @@ export async function POST(request: Request) {
     const payload = (await request.json()) as SurveyPayload;
     if (payload.website) return NextResponse.json({ ok: true });
 
-    const required = [payload.name, payload.company, payload.title, payload.aiExperience, payload.primaryOutcome, payload.usecaseTitle, payload.currentPain, payload.usecaseDescription, payload.desiredOutput, payload.dataSensitivity, payload.successCriteria];
-    if (required.some((value) => !clean(value)) || !payload.businessAreas?.length || clean(payload.usecaseDescription).length < 20) {
+    const required = [payload.name, payload.company, payload.title, payload.aiExperience, payload.primaryOutcome, payload.usecaseTitle, payload.currentPain, payload.asIs, payload.toBe, payload.desiredOutput, payload.dataSensitivity, payload.successCriteria];
+    if (required.some((value) => !clean(value)) || !payload.businessAreas?.length || clean(payload.asIs).length < 50 || clean(payload.toBe).length < 50) {
       return NextResponse.json({ ok: false, message: "필수 항목을 확인해 주세요." }, { status: 400 });
     }
 
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
       businessAreas: (payload.businessAreas || []).slice(0, 3).map((v) => clean(v, 60)).join(", "),
       primaryOutcome: clean(payload.primaryOutcome, 100),
       usecaseTitle: clean(payload.usecaseTitle, 250),
-      usecaseDescription: clean(payload.usecaseDescription, 3000),
+      usecaseDescription: `[AS-IS]\n${clean(payload.asIs, 2000)}\n\n[TO-BE]\n${clean(payload.toBe, 2000)}`,
       currentPain: clean(payload.currentPain, 2000),
       desiredOutput: clean(payload.desiredOutput, 150),
       availableDataTools: "",

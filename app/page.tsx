@@ -69,7 +69,8 @@ type FormState = {
   primaryOutcome: string;
   primaryOutcomeOther: string;
   usecaseTitle: string;
-  usecaseDescription: string;
+  asIs: string;
+  toBe: string;
   currentPain: string;
   desiredOutput: string;
   desiredOutputOther: string;
@@ -90,7 +91,8 @@ const initialForm: FormState = {
   primaryOutcome: "",
   primaryOutcomeOther: "",
   usecaseTitle: "",
-  usecaseDescription: "",
+  asIs: "",
+  toBe: "",
   currentPain: "",
   desiredOutput: "",
   desiredOutputOther: "",
@@ -147,7 +149,8 @@ export default function Home() {
     return Boolean(
       form.usecaseTitle &&
         form.currentPain.trim() &&
-        form.usecaseDescription.length >= 20 &&
+        form.asIs.trim().length >= 50 &&
+        form.toBe.trim().length >= 50 &&
         form.desiredOutput &&
         (form.desiredOutput !== "직접입력" || form.desiredOutputOther.trim()) &&
         form.dataSensitivity &&
@@ -167,7 +170,8 @@ export default function Home() {
 
   const applyExample = (example: (typeof examples)[number]) => {
     update("usecaseTitle", example.title);
-    update("usecaseDescription", example.detail);
+    update("asIs", `현재는 ${example.title} 업무에 필요한 자료를 여러 곳에서 직접 수집하고 검토한 뒤 수작업으로 정리하고 있습니다. 이 과정에서 시간이 오래 걸리고 중요한 내용이 누락될 가능성이 있습니다.`);
+    update("toBe", `${example.detail} AI가 초안을 만들고 담당자가 결과를 검토·보완하는 방식으로 전환하여, 같은 업무에 반복적으로 활용할 수 있기를 기대합니다.`);
     update("desiredOutput", example.output);
     setShowExamples(false);
   };
@@ -175,7 +179,7 @@ export default function Home() {
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!validateStep() || status === "submitting") {
-      setErrorMessage("필수 항목을 모두 입력해 주세요. 상세 설명은 20자 이상 작성해 주세요.");
+      setErrorMessage("필수 항목을 모두 입력해 주세요. AS-IS와 TO-BE는 각각 50자 이상 작성해 주세요.");
       return;
     }
 
@@ -214,7 +218,7 @@ export default function Home() {
             미리 떠올려 주세요.
           </p>
           <div className="prep-grid">
-            <div><span>01</span><p>현재 업무에서 실제로 사용하는 자료나 도구의 종류</p></div>
+            <div><span>01</span><p>AI를 통해 만들고 싶은 Use Case의 구체적인 결과물(웹앱, 프로그램, 챗봇 등)</p></div>
             <div><span>02</span><p>AI 결과가 좋아졌다고 판단할 수 있는 구체적인 기준</p></div>
           </div>
           <button className="secondary-button" onClick={() => { setForm(initialForm); setStep(1); setStatus("idle"); }}>
@@ -288,7 +292,21 @@ export default function Home() {
                 <div className="section-heading usecase-heading"><div><h2>만들고 싶은 Use Case를 구체화해 주세요.</h2><p>완벽하게 쓰지 않아도 괜찮습니다. 예시를 골라 수정해도 됩니다.</p></div><button type="button" className="example-button" onClick={() => setShowExamples(true)}>✦ 작성 예시 보기</button></div>
                 <label><FieldLabel>Use Case 제목</FieldLabel><input value={form.usecaseTitle} onChange={(e) => update("usecaseTitle", e.target.value)} placeholder="예: 주간 경영회의 의사결정 브리프 자동 작성" /></label>
                 <label><FieldLabel>현재 업무 방식에서 가장 불편한 점</FieldLabel><textarea value={form.currentPain} onChange={(e) => update("currentPain", e.target.value)} placeholder="예: 자료가 여러 파일에 흩어져 있고, 매주 취합과 요약에 3시간 이상 걸립니다." /></label>
-                <label><FieldLabel>어떤 업무를 어떻게 바꾸고 싶으신가요?</FieldLabel><textarea className="large-textarea" value={form.usecaseDescription} onChange={(e) => update("usecaseDescription", e.target.value)} placeholder="현재 어떤 자료를 보고, 누구와 어떤 판단을 하며, AI가 어느 부분을 도와주면 좋을지 적어주세요." /><span className="char-count">{form.usecaseDescription.length}자 · 최소 20자</span></label>
+                <fieldset>
+                  <FieldLabel>어떤 업무를 어떻게 바꾸고 싶으신가요?</FieldLabel>
+                  <div className="change-grid">
+                    <label className="change-card">
+                      <div className="change-card-head"><strong>AS-IS</strong><span>현재 업무 방식</span></div>
+                      <textarea className="large-textarea" value={form.asIs} onChange={(e) => update("asIs", e.target.value)} placeholder="현재 누가, 어떤 자료와 도구를 사용해, 어떤 순서로 업무를 처리하고 있는지 구체적으로 적어주세요." />
+                      <span className={`minimum-hint ${form.asIs.trim().length >= 50 ? "met" : ""}`}>{form.asIs.trim().length}/50자 · 최소 50자 이상</span>
+                    </label>
+                    <label className="change-card to-be-card">
+                      <div className="change-card-head"><strong>TO-BE</strong><span>AI 적용 후 모습</span></div>
+                      <textarea className="large-textarea" value={form.toBe} onChange={(e) => update("toBe", e.target.value)} placeholder="AI가 어느 부분을 어떻게 도와주고, 최종적으로 업무가 어떤 모습으로 바뀌기를 원하는지 적어주세요." />
+                      <span className={`minimum-hint ${form.toBe.trim().length >= 50 ? "met" : ""}`}>{form.toBe.trim().length}/50자 · 최소 50자 이상</span>
+                    </label>
+                  </div>
+                </fieldset>
                 <div className="two-col">
                   <label><FieldLabel>원하는 산출물</FieldLabel><select value={form.desiredOutput} onChange={(e) => update("desiredOutput", e.target.value)}><option value="">선택해 주세요</option><option>경영진 보고서·브리프</option><option>분석 리포트·대시보드</option><option>이메일·제안서·콘텐츠</option><option>점검표·액션 리스트</option><option>검색·질의응답 도구</option><option>반복 업무 자동화</option><option>직접입력</option></select>{form.desiredOutput === "직접입력" && <input className="conditional-input" value={form.desiredOutputOther} onChange={(e) => update("desiredOutputOther", e.target.value)} placeholder="원하는 산출물을 직접 입력해 주세요" autoFocus />}</label>
                   <label><FieldLabel>다룰 정보의 민감도</FieldLabel><select value={form.dataSensitivity} onChange={(e) => update("dataSensitivity", e.target.value)}><option value="">선택해 주세요</option><option>공개 가능한 정보</option><option>사내 일반 정보</option><option>민감 정보 포함 가능</option><option>잘 모르겠음</option></select></label>

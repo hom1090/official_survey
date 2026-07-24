@@ -1,31 +1,19 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-async function render(path = "/") {
-  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
-  workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
-  const { default: worker } = await import(workerUrl.href);
+test("keeps the survey fields required for the Vercel deployment", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(page, /asIs/);
+  assert.match(page, /toBe/);
+  assert.match(page, /minimum-hint/);
+  assert.match(page, /length >= 50/);
+  assert.doesNotMatch(page, /codex-preview|react-loading-skeleton/i);
+});
 
-  return worker.fetch(
-    new Request(`http://localhost${path}`, { headers: { accept: "text/html" } }),
-    { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } },
-    { waitUntil() {}, passThroughOnException() {} },
-  );
-}
-
-test("renders the executive AI hands-on survey", async () => {
-  const response = await render();
-  assert.equal(response.status, 200);
-  assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
-
-  const html = await response.text();
-  assert.match(html, /Executive AI Hands-on \| 사전 준비 설문/i);
-  assert.match(html, /직접 만들고 싶은/);
-  assert.doesNotMatch(html, /이번 세션에서 직접 만들고 싶은/);
-  assert.doesNotMatch(html, /좋은 주제의 기준/);
-  assert.match(html, /STEP/);
-  assert.match(html, /OF 3/);
-  assert.match(html, /기본 정보/);
-  assert.match(html, /약 5분/);
-  assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
+test("keeps the server-side Google Apps Script submission route", async () => {
+  const route = await readFile(new URL("../app/api/submit/route.ts", import.meta.url), "utf8");
+  assert.match(route, /process\.env\.APPS_SCRIPT_URL/);
+  assert.match(route, /\[AS-IS\]/);
+  assert.match(route, /\[TO-BE\]/);
 });

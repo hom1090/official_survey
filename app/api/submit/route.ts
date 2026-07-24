@@ -1,4 +1,9 @@
 import { NextResponse } from "next/server";
+import { postToAppsScript } from "@/lib/apps-script";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 type SurveyPayload = {
   name?: string;
@@ -32,11 +37,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, message: "필수 항목을 확인해 주세요." }, { status: 400 });
     }
 
-    const endpoint = process.env.APPS_SCRIPT_URL;
-    if (!endpoint) {
-      return NextResponse.json({ ok: false, message: "응답 저장 연결을 준비 중입니다. 잠시 후 다시 시도해 주세요." }, { status: 503 });
-    }
-
     const submissionId = crypto.randomUUID();
     const body = new URLSearchParams({
       submissionId,
@@ -58,15 +58,31 @@ export async function POST(request: Request) {
       instructorNote: clean(payload.instructorNote, 1500),
     });
 
-    const response = await fetch(endpoint, { method: "POST", body, redirect: "follow" });
-    const result = (await response.json()) as { ok?: boolean; message?: string; submissionId?: string };
-    if (!response.ok || !result.ok || result.submissionId !== submissionId) {
-      throw new Error(result.message || "스프레드시트 저장 확인에 실패했습니다.");
+    const { response, result } = await postToAppsScript(body);
+    if (!response.ok || !result.ok) {
+      return NextResponse.json(
+        { ok: false, message: result.message || "Google Sheets 저장에 실패했습니다." },
+        { status: 502 },
+      );
+    }
+    if (result.submissionId !== submissionId) {
+      return NextResponse.json(
+        { ok: false, message: "저장 확인 ID가 일치하지 않습니다. 다시 제출해 주세요." },
+        { status: 502 },
+      );
     }
 
     return NextResponse.json({ ok: true, submissionId });
   } catch (error) {
     console.error("Survey submission failed", error);
-    return NextResponse.json({ ok: false, message: "응답을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요." }, { status: 500 });
+    return NextResponse.json(
+      {
+        ok: false,
+        message: error instanceof Error
+          ? `응답 저장 연결 오류: ${error.message}`
+          : "응답을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+      },
+      { status: 500 },
+    );
   }
 }

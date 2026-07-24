@@ -13,7 +13,15 @@ test("keeps the survey fields required for the Vercel deployment", async () => {
 
 test("keeps the server-side Google Apps Script submission route", async () => {
   const route = await readFile(new URL("../app/api/submit/route.ts", import.meta.url), "utf8");
-  assert.match(route, /process\.env\.APPS_SCRIPT_URL/);
+  const integration = await readFile(new URL("../lib/apps-script.ts", import.meta.url), "utf8");
   assert.match(route, /\[AS-IS\]/);
   assert.match(route, /\[TO-BE\]/);
+  assert.match(integration, /process\.env\.APPS_SCRIPT_URL/);
+  assert.match(integration, /AbortSignal\.timeout/);
+});
+
+test("provides a non-writing Apps Script health check", async () => {
+  const route = await readFile(new URL("../app/api/health/route.ts", import.meta.url), "utf8");
+  assert.match(route, /connection-check-no-write/);
+  assert.match(route, /endpointReachable/);
 });

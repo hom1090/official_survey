@@ -8,6 +8,9 @@ test("keeps the survey fields required for the Vercel deployment", async () => {
   assert.match(page, /toBe/);
   assert.match(page, /minimum-hint/);
   assert.match(page, /length >= 50/);
+  assert.match(page, /AI Agent\(Claude Code, Codex 등\) 활용 경험 있음/);
+  assert.match(page, /유료 생성형 AI 사용 현황/);
+  assert.match(page, /paidAiTools/);
   assert.doesNotMatch(page, /codex-preview|react-loading-skeleton/i);
 });
 
@@ -16,6 +19,7 @@ test("keeps the server-side Google Apps Script submission route", async () => {
   const integration = await readFile(new URL("../lib/apps-script.ts", import.meta.url), "utf8");
   assert.match(route, /\[AS-IS\]/);
   assert.match(route, /\[TO-BE\]/);
+  assert.match(route, /agentPreference: \(payload\.paidAiTools/);
   assert.match(integration, /process\.env\.APPS_SCRIPT_URL/);
   assert.match(integration, /AbortSignal\.timeout/);
 });

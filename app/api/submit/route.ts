@@ -11,6 +11,7 @@ type SurveyPayload = {
   title?: string;
   email?: string;
   aiExperience?: string;
+  paidAiTools?: string[];
   businessAreas?: string[];
   primaryOutcome?: string;
   usecaseTitle?: string;
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
     if (payload.website) return NextResponse.json({ ok: true });
 
     const required = [payload.name, payload.company, payload.title, payload.aiExperience, payload.primaryOutcome, payload.usecaseTitle, payload.currentPain, payload.asIs, payload.toBe, payload.desiredOutput, payload.dataSensitivity, payload.successCriteria];
-    if (required.some((value) => !clean(value)) || !payload.businessAreas?.length || clean(payload.asIs).length < 50 || clean(payload.toBe).length < 50) {
+    if (required.some((value) => !clean(value)) || !payload.paidAiTools?.length || !payload.businessAreas?.length || clean(payload.asIs).length < 50 || clean(payload.toBe).length < 50) {
       return NextResponse.json({ ok: false, message: "필수 항목을 확인해 주세요." }, { status: 400 });
     }
 
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
       title: clean(payload.title, 100),
       email: clean(payload.email, 200),
       aiExperience: clean(payload.aiExperience, 100),
-      agentPreference: "",
+      agentPreference: (payload.paidAiTools || []).map((v) => clean(v, 60)).join(", "),
       businessAreas: (payload.businessAreas || []).slice(0, 3).map((v) => clean(v, 60)).join(", "),
       primaryOutcome: clean(payload.primaryOutcome, 100),
       usecaseTitle: clean(payload.usecaseTitle, 250),

@@ -2,6 +2,8 @@
 
 import { FormEvent, useMemo, useState } from "react";
 
+const paidAiToolOptions = ["GPT", "Claude", "Gemini", "직접입력"];
+
 const businessAreas = [
   "전략·기획",
   "영업·마케팅",
@@ -64,6 +66,8 @@ type FormState = {
   title: string;
   email: string;
   aiExperience: string;
+  paidAiTools: string[];
+  paidAiToolOther: string;
   businessAreas: string[];
   businessAreaOther: string;
   primaryOutcome: string;
@@ -86,6 +90,8 @@ const initialForm: FormState = {
   title: "",
   email: "",
   aiExperience: "",
+  paidAiTools: [],
+  paidAiToolOther: "",
   businessAreas: [],
   businessAreaOther: "",
   primaryOutcome: "",
@@ -136,11 +142,21 @@ export default function Home() {
     );
   };
 
+  const togglePaidAiTool = (tool: string) => {
+    const exists = form.paidAiTools.includes(tool);
+    update(
+      "paidAiTools",
+      exists ? form.paidAiTools.filter((item) => item !== tool) : [...form.paidAiTools, tool],
+    );
+  };
+
   const validateStep = () => {
     if (step === 1) return Boolean(form.name && form.company && form.title);
     if (step === 2)
       return Boolean(
         form.aiExperience &&
+          form.paidAiTools.length &&
+          (!form.paidAiTools.includes("직접입력") || form.paidAiToolOther.trim()) &&
           form.businessAreas.length &&
           (!form.businessAreas.includes("직접입력") || form.businessAreaOther.trim()) &&
           form.primaryOutcome &&
@@ -191,6 +207,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
+          paidAiTools: form.paidAiTools.map((tool) => tool === "직접입력" ? form.paidAiToolOther.trim() : tool),
           businessAreas: form.businessAreas.map((area) => area === "직접입력" ? form.businessAreaOther.trim() : area),
           primaryOutcome: form.primaryOutcome === "직접입력" ? form.primaryOutcomeOther.trim() : form.primaryOutcome,
           desiredOutput: form.desiredOutput === "직접입력" ? form.desiredOutputOther.trim() : form.desiredOutput,
@@ -278,8 +295,11 @@ export default function Home() {
               <div className="step-content">
                 <div className="section-heading"><h2>어떤 업무에 AI를 적용하고 싶으신가요?</h2><p>가장 가까운 항목을 편하게 선택해 주세요.</p></div>
                 <fieldset><FieldLabel>생성형 AI 활용 경험</FieldLabel><div className="choice-list">
-                  {["거의 사용해 본 적 없음", "요약·검색 등에 가끔 사용", "정기적으로 업무에 활용", "AI Agent 활용 경험 있음(Claude Code, Codex)"].map((item) => <label className={`radio-card ${form.aiExperience === item ? "selected" : ""}`} key={item}><input type="radio" name="experience" value={item} checked={form.aiExperience === item} onChange={() => update("aiExperience", item)} /><span>{item}</span></label>)}
+                  {["거의 사용해 본 적 없음", "요약·검색 등에 가끔 사용", "정기적으로 업무에 활용", "AI Agent(Claude Code, Codex 등) 활용 경험 있음"].map((item) => <label className={`radio-card ${form.aiExperience === item ? "selected" : ""}`} key={item}><input type="radio" name="experience" value={item} checked={form.aiExperience === item} onChange={() => update("aiExperience", item)} /><span>{item}</span></label>)}
                 </div></fieldset>
+                <fieldset><FieldLabel>유료 생성형 AI 사용 현황 <small>복수 선택 가능</small></FieldLabel><div className="chip-grid paid-ai-grid">
+                  {paidAiToolOptions.map((tool) => <label className={`check-chip ${form.paidAiTools.includes(tool) ? "selected" : ""}`} key={tool}><input type="checkbox" checked={form.paidAiTools.includes(tool)} onChange={() => togglePaidAiTool(tool)} /><span>{tool}</span></label>)}
+                </div>{form.paidAiTools.includes("직접입력") && <input className="conditional-input" value={form.paidAiToolOther} onChange={(e) => update("paidAiToolOther", e.target.value)} placeholder="사용 중인 유료 생성형 AI를 직접 입력해 주세요" autoFocus />}</fieldset>
                 <fieldset><FieldLabel>관심 업무 영역 <small>최대 3개</small></FieldLabel><div className="chip-grid">
                   {businessAreas.map((area) => <label className={`check-chip ${form.businessAreas.includes(area) ? "selected" : ""}`} key={area}><input type="checkbox" checked={form.businessAreas.includes(area)} onChange={() => toggleArea(area)} disabled={!form.businessAreas.includes(area) && form.businessAreas.length >= 3} /><span>{area}</span></label>)}
                 </div>{form.businessAreas.includes("직접입력") && <input className="conditional-input" value={form.businessAreaOther} onChange={(e) => update("businessAreaOther", e.target.value)} placeholder="관심 업무 영역을 직접 입력해 주세요" autoFocus />}</fieldset>

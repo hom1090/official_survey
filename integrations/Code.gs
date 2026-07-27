@@ -30,7 +30,7 @@ function doPost(e) {
       p.title || "",
       p.email || "",
       p.aiExperience || "",
-      p.agentPreference || "",
+      p.agentPreference || "", // 하위 호환: 유료 생성형 AI 사용 현황 저장
       p.businessAreas || "",
       p.primaryOutcome || "",
       p.usecaseTitle || "",

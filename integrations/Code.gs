@@ -37,10 +37,10 @@ function doPost(e) {
       p.usecaseDescription || "",
       p.currentPain || "",
       p.desiredOutput || "",
-      p.availableDataTools || "",
-      p.dataSensitivity || "",
-      p.successCriteria || "",
-      p.instructorNote || "",
+      p.availableDataTools || "", // DB O: 데이터 민감도
+      p.dataSensitivity || "", // DB P: 성공 기준
+      p.successCriteria || "", // DB Q: 강사에게 전할 내용
+      p.instructorNote || "", // 레거시 18열 구조를 위한 빈 값
     ]);
     SpreadsheetApp.flush();
     return json_({ ok: true, submissionId: p.submissionId });

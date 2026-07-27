@@ -21,6 +21,10 @@ test("keeps the server-side Google Apps Script submission route", async () => {
   assert.match(route, /\[AS-IS\]/);
   assert.match(route, /\[TO-BE\]/);
   assert.match(route, /agentPreference: \(payload\.paidAiTools/);
+  assert.match(route, /availableDataTools: clean\(payload\.dataSensitivity/);
+  assert.match(route, /dataSensitivity: clean\(payload\.successCriteria/);
+  assert.match(route, /successCriteria: clean\(payload\.instructorNote/);
+  assert.match(route, /instructorNote: ""/);
   assert.match(integration, /process\.env\.APPS_SCRIPT_URL/);
   assert.match(integration, /AbortSignal\.timeout/);
 });

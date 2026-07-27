@@ -53,10 +53,12 @@ export async function POST(request: Request) {
       usecaseDescription: `[AS-IS]\n${clean(payload.asIs, 2000)}\n\n[TO-BE]\n${clean(payload.toBe, 2000)}`,
       currentPain: clean(payload.currentPain, 2000),
       desiredOutput: clean(payload.desiredOutput, 150),
-      availableDataTools: "",
-      dataSensitivity: clean(payload.dataSensitivity, 100),
-      successCriteria: clean(payload.successCriteria, 1000),
-      instructorNote: clean(payload.instructorNote, 1500),
+      // The deployed Apps Script still appends the legacy 18-column payload.
+      // Shift these values left so the DB stays aligned after removing legacy column O.
+      availableDataTools: clean(payload.dataSensitivity, 100),
+      dataSensitivity: clean(payload.successCriteria, 1000),
+      successCriteria: clean(payload.instructorNote, 1500),
+      instructorNote: "",
     });
 
     const { response, result } = await postToAppsScript(body);

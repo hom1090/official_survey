@@ -2,7 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 
-const paidAiToolOptions = ["GPT", "Claude", "Gemini", "직접입력"];
+const paidAiToolOptions = ["GPT", "Claude", "Gemini", "직접입력", "유료 계정 없음"];
 
 const businessAreas = [
   "전략·기획",
@@ -144,9 +144,14 @@ export default function Home() {
 
   const togglePaidAiTool = (tool: string) => {
     const exists = form.paidAiTools.includes(tool);
+    if (tool === "유료 계정 없음") {
+      update("paidAiTools", exists ? [] : [tool]);
+      return;
+    }
+    const currentTools = form.paidAiTools.filter((item) => item !== "유료 계정 없음");
     update(
       "paidAiTools",
-      exists ? form.paidAiTools.filter((item) => item !== tool) : [...form.paidAiTools, tool],
+      exists ? currentTools.filter((item) => item !== tool) : [...currentTools, tool],
     );
   };
 
